@@ -14,8 +14,9 @@ from Insurance import utils
 
 class DataTransformation:
     
-    def __init__(self,data_transformation_config:config_entity.DataTransformationConfig,data_ingestion_artifact:artifact_entity.DataIngestionArtifact):
+    def __init__(self,data_transformation_config:config_entity.DataTransformationConfig,data_ingestion_artifact:artifact_entity.DataTransformationArtifact):
         try:
+            
             self.data_transformation_config = data_transformation_config
             self.data_ingestion_artifact = data_ingestion_artifact
         
@@ -76,17 +77,18 @@ class DataTransformation:
             test_arr = np.c_[input_features_test_arr, target_feature_test_arr]
             
             
-            utils.save_numpy_array_data(file_path=self.data_transformation_config.transform_train_path, array=train_arr)
-            utils.save_numpy_array_data(file_path=self.data_transformation_config.transform_test_path, array=test_arr)
+            utils.save_numpy_array_data(file_path=self.data_transformation_config.transformed_train_path, array=train_arr)
+            utils.save_numpy_array_data(file_path=self.data_transformation_config.transformed_test_path, array=test_arr)
             
             utils.save_object(file_path=self.data_transformation_config.transform_object_path, obj=transformation_pipeline)
             utils.save_object(file_path=self.data_transformation_config.target_encoder_path, obj=label_encoder)
             
-            data_transformation_artifacts = artifact_entity.DataTransformationArtifact(transform_object_path=self.data_transformation_config.transform_object_path,
-                                                                                       transform_test_path=self.data_transformation_config.transform_test_path,
-                                                                                       transform_train_path=self.data_transformation_config.transform_train_path,
+            data_transformation_artifact = artifact_entity.DataTransformationArtifact(transform_object_path=self.data_transformation_config.transform_object_path,
+                                                                                       transformed_test_path=self.data_transformation_config.transformed_test_path,
+                                                                                       transformed_train_path=self.data_transformation_config.transformed_train_path,
                                                                                        target_encoder_path=self.data_transformation_config.target_encoder_path
                                                                                        )
+            return data_transformation_artifact
             
         except Exception as e:
             raise InsuranceException(e,sys)
