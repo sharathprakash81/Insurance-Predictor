@@ -28,3 +28,10 @@ class ModelTrainerArtifact:
     r2_train_scores: float
     r2_test_scores: float
     
+    
+@dataclass
+class ModelEvaluationArtifact:
+    is_model_accepted: bool
+    improved_accuracy: float
+    
+    
