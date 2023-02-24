@@ -14,7 +14,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
 from Insurance.logger import logging
 from Insurance.predictor import ModelResolver
-
+from Insurance.config import TARGET_COLUMN
 
 class ModelEvaluation:
     def __init__(self, 
@@ -42,8 +42,58 @@ class ModelEvaluation:
                 logging.info(f"Model evaluation artifact: {model_eval_artifact}")
                 
                 return model_eval_artifact
+            
+            transform_path = self.model_resolver.get_latest_transformer_path()
+            model_path = self.model_resolver.get_latest_model_path()
+            target_encoder_path = self.model_resolver.get_latest_target_encoder_path()
+            
+            #*previous model_path
+            transformer = utils.load_object(file_path=transform_path)
+            model = utils.load_object(file_path=model_path)
+            target_encoder = utils.load_object(file_path=target_encoder_path)
+            
+            #*current model
+            current_transformer = utils.load_object(file_path=self.data_transformation_artifact.transform_object_path)
+            current_model = utils.load_object(file_path=self.model_trainer_artifact.model_path)
+            current_target_encoder  = utils.load_object(file_path=self.data_transformation_artifact.target_encoder_path)
+            
+            test_df = pd.read_csv(self.data_ingestion_artifact.test_file_path)
+            target_df = test_df[TARGET_COLUMN]
+            y_true = target_df
+            
+            input_features_name = list(transformer.feature_names_in_)
+            for i in input_features_name:
+                if test_df[i].dtypes == 'object':
+                    test_df[i] = target_encoder.fit_transform(test_df[i])
+            
+            input_arr = transformer.transform(test_df[input_features_name])
+            y_pred = model.predict(input_arr)
+            
+            #*comparing new vs old model
+            
+            previous_model_score = r2_score(y_true=y_true, y_pred=y_pred)
+            
+            #*accuracy check current model
+            input_features_name = list(current_transformer.features_names_in_)
+            input_arr = current_transformer.transform(test_df[input_features_name])
+            y_pred = current_model.predict(input_arr)
+            y_true = target_df
+            
+            current_model_score = r2_score(y_true=y_true, y_pred=y_pred)
+            
+            #*final comparison between new and old model
+            
+            if current_model_score <= previous_model_score:
+                logging.info(f"Current trained model is not better than previous trained model")
+                raise Exception("Current trained model is not better than previous trained model")
+            
+            model_eval_artifact = artifact_entity.ModelEvaluationArtifact(is_model_accepted=True, improved_accuracy=current_model_score-previous_model_score)
+            
+            return model_eval_artifact                                 
+            
+            
+            
                 
         except Exception as e:
-
                 raise InsuranceException(e, sys)         
         

@@ -1,12 +1,15 @@
 import os, sys
 from typing import Optional
-from Insurance.entity.config_entity import TRANSFORMER_OBJECT_FILE_NAME, MODEL_FILE_NAME, TARGET_ENCODER_OBJECT_FILE_NAME
+from Insurance.entity.config_entity import MODEL_FILE_NAME, TRANSFORMER_OBJECT_FILE_NAME,TARGET_ENCODER_OBJECT_FILE_NAME
+from Insurance.exception import InsuranceException
+from Insurance.logger import logging
+
 
 
 class ModelResolver:
     
     
-    def __init__(self, model_registry:str ="saved_model",
+    def __init__(self, model_registry:str ="saved_models",
                  transformer_dir_name= "transformer",
                  target_encoder_dir_name= "target_encoder",
                  model_dir_name ="model"):
@@ -73,11 +76,12 @@ class ModelResolver:
         
         try:
             latest_dir = self.get_latest_dir_path()
-            if latest_dir is None:
+            if latest_dir == None:
                 return os.path.join(self.model_registry, f"{0}")
             
             latest_dir_num = int(os.path.basename(self.get_latest_dir_path()))
             return os.path.join(self.model_registry, f"{latest_dir_num +1}")
+        
         except Exception as e:
             raise e      
     
@@ -85,8 +89,9 @@ class ModelResolver:
     def get_latest_save_model_path(self):
         
         try:
-            latest_dir = self.get_latest_save_model_path()
+            latest_dir = self.get_latest_save_dir_path()
             return os.path.join(latest_dir, self.model_dir_name, MODEL_FILE_NAME)
+        
         except Exception as e:
             raise e 
     
@@ -107,4 +112,7 @@ class ModelResolver:
         
         except Exception as e:
             raise e 
-        
+
+
+
+
