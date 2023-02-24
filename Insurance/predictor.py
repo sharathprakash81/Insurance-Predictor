@@ -1,5 +1,6 @@
 import os, sys
 from typing import Optional
+from glob import glob
 from Insurance.entity.config_entity import MODEL_FILE_NAME, TRANSFORMER_OBJECT_FILE_NAME,TARGET_ENCODER_OBJECT_FILE_NAME
 from Insurance.exception import InsuranceException
 from Insurance.logger import logging
@@ -66,7 +67,7 @@ class ModelResolver:
             if latest_dir is None:
                 raise Exception("Target encoder data is not available")
             
-            return os.path.join(latest_dir,self.transformer_dir_name, TRANSFORMER_OBJECT_FILE_NAME)
+            return os.path.join(latest_dir,self.target_encoder_dir_name, TARGET_ENCODER_OBJECT_FILE_NAME)
         
         except Exception as e:
             raise e

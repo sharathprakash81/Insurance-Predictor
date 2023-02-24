@@ -24,6 +24,7 @@ class ModelEvaluation:
                  model_trainer_artifact: artifact_entity.ModelTrainerArtifact):
         
             try:
+                logging.info(f"{'>>'*20}  Model Evaluation {'<<'*20}")
                 self.model_evaluation_config= model_evaluation_config
                 self.data_ingestion_artifact= data_ingestion_artifact
                 self.data_transformation_artifact= data_transformation_artifact
@@ -35,6 +36,8 @@ class ModelEvaluation:
             
     def initiate_model_evaluation(self)->artifact_entity.ModelEvaluationArtifact:
         try:
+            logging.info("if saved model folder has model then we will compare "
+            "which model is best:  trained or the model from saved model folder")
             latest_dir_path = self.model_resolver.get_latest_dir_path()
             
             if latest_dir_path == None:
@@ -43,16 +46,19 @@ class ModelEvaluation:
                 
                 return model_eval_artifact
             
+            logging.info("Finding location of transformer model and target encoder")
             transform_path = self.model_resolver.get_latest_transformer_path()
             model_path = self.model_resolver.get_latest_model_path()
             target_encoder_path = self.model_resolver.get_latest_target_encoder_path()
             
             #*previous model_path
+            logging.info("Previous trained objects of transformer, model and target encoder")
             transformer = load_object(file_path=transform_path)
             model = load_object(file_path=model_path)
             target_encoder = load_object(file_path=target_encoder_path)
             
             #*current model
+            logging.info("Currently trained model objects")
             current_transformer = load_object(file_path=self.data_transformation_artifact.transform_object_path)
             current_model = load_object(file_path=self.model_trainer_artifact.model_path)
             current_target_encoder  = load_object(file_path=self.data_transformation_artifact.target_encoder_path)
@@ -61,6 +67,7 @@ class ModelEvaluation:
             target_df = test_df[TARGET_COLUMN]
             y_true = target_df
             
+            logging.info("We need to create label encoder object for each categorical variable. We will check later")
             input_features_name = list(transformer.feature_names_in_)
             for i in input_features_name:
                 if test_df[i].dtypes == 'object':
@@ -68,18 +75,22 @@ class ModelEvaluation:
             
             input_arr = transformer.transform(test_df[input_features_name])
             y_pred = model.predict(input_arr)
+            print(f"Prediction using previous model: {y_pred[:5]}")
             
             #*comparing new vs old model
             
             previous_model_score = r2_score(y_true=y_true, y_pred=y_pred)
+            logging.info(f"Accuracy using previous trained model: {previous_model_score}")
             
             #*accuracy check current model
-            input_features_name = list(current_transformer.features_names_in_)
+            input_features_name = list(current_transformer.feature_names_in_)
             input_arr = current_transformer.transform(test_df[input_features_name])
             y_pred = current_model.predict(input_arr)
             y_true = target_df
             
+            print(f"Prediction using trained model: {y_pred[:5]}")
             current_model_score = r2_score(y_true=y_true, y_pred=y_pred)
+            logging.info(f"Accuracy using current trained model: {current_model_score}")
             
             #*final comparison between new and old model
             
@@ -88,6 +99,7 @@ class ModelEvaluation:
                 raise Exception("Current trained model is not better than previous trained model")
             
             model_eval_artifact = artifact_entity.ModelEvaluationArtifact(is_model_accepted=True, improved_accuracy=current_model_score-previous_model_score)
+            logging.info(f"Model eval artifact: {model_eval_artifact}")
             
             return model_eval_artifact                                 
             
